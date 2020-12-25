@@ -9,6 +9,13 @@ type Callback<
 ) => ([Result] extends [never] ? void : (Promise<Result> | Result));
 
 /**
+ * Pick suitable type from union type by method property.
+ */
+type ByMethod<Union extends { method: string }, M extends string> =
+  // deno-lint-ignore no-explicit-any
+  Union extends { method: M } ? Union : any;
+
+/**
  * PlainObject.
  */
 export type PlainObject =
@@ -188,12 +195,12 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Send request.
    */
-  public request<Request extends P["OutgoingRequest"]>(
-    method: Request["method"],
-    params: Request["params"],
-  ): Promise<Request["result"]> {
+  public request<M extends string>(
+    method: M,
+    params: ByMethod<P["OutgoingRequest"], M>["params"],
+  ): Promise<ByMethod<P["OutgoingRequest"], M>["result"]> {
     const id = this.requestId++;
-    return new Promise<Request["result"]>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.requests.set(id, { resolve, reject });
       this.io.write(JSON.stringify({
         id: id,
@@ -206,9 +213,9 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Send notification.
    */
-  public notify<Notification extends P["OutgoingNotification"]>(
-    method: Notification["method"],
-    params: Notification["params"],
+  public notify<M extends string>(
+    method: M,
+    params: ByMethod<P["OutgoingNotification"], M>["params"],
   ): void {
     this.io.write(JSON.stringify({
       method: method,
@@ -219,9 +226,12 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Receive request.
    */
-  public onRequest<Request extends P["IncomingRequest"]>(
-    method: Request["method"],
-    callback: Callback<Request["params"], Request["result"]>,
+  public onRequest<M extends string>(
+    method: M,
+    callback: Callback<
+      ByMethod<P["IncomingRequest"], M>["params"],
+      ByMethod<P["IncomingRequest"], M>["result"]
+    >,
   ) {
     if (this.incomingRequestHandlers[method]) {
       throw new Error(`'${method}' is already registered.`);
@@ -233,9 +243,9 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Receive notification.
    */
-  public onNotification<Notification extends P["IncomingNotification"]>(
-    method: Notification["method"],
-    callback: Callback<Notification["params"], never>,
+  public onNotification<M extends string>(
+    method: M,
+    callback: Callback<ByMethod<P["IncomingNotification"], M>["params"], never>,
   ) {
     if (this.incomingNotificationHandlers[method]) {
       throw new Error(`'${method}' is already registered.`);
