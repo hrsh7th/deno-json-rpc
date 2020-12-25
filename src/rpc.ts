@@ -9,32 +9,6 @@ type Callback<
 ) => ([Result] extends [never] ? void : (Promise<Result> | Result));
 
 /**
- * Protocol type.
- */
-type ProtocolDefinition = {
-  IncomingRequest: {
-    method: string;
-    // deno-lint-ignore no-explicit-any
-    params: any;
-    result: PlainObject;
-  };
-  OutgoingRequest: {
-    method: string;
-    params: PlainObject;
-    result: PlainObject;
-  };
-  IncomingNotification: {
-    method: string;
-    // deno-lint-ignore no-explicit-any
-    params: any;
-  };
-  OutgoingNotification: {
-    method: string;
-    params: PlainObject;
-  };
-};
-
-/**
  * PlainObject.
  */
 export type PlainObject =
@@ -59,6 +33,32 @@ export type PlainObject =
 export type IO = {
   read: () => Promise<string | void>;
   write: (message: string) => Promise<void>;
+};
+
+/**
+ * Protocol.
+ */
+export type Protocol = {
+  IncomingRequest: {
+    method: string;
+    // deno-lint-ignore no-explicit-any
+    params: any;
+    result: PlainObject;
+  };
+  OutgoingRequest: {
+    method: string;
+    params: PlainObject;
+    result: PlainObject;
+  };
+  IncomingNotification: {
+    method: string;
+    // deno-lint-ignore no-explicit-any
+    params: any;
+  };
+  OutgoingNotification: {
+    method: string;
+    params: PlainObject;
+  };
 };
 
 /**
@@ -108,7 +108,7 @@ export type IO = {
  * rpc.start();
  * ```
  */
-export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
+export class RPC<P extends Protocol = Protocol> {
   /**
    * The requestId.
    */
@@ -167,10 +167,10 @@ export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
     this.running = true;
     (async () => {
       while (true) {
+        const message = await this.io.read();
         if (!this.running) {
           break;
         }
-        const message = await this.io.read();
         if (message) {
           this.onMessage(message);
         }
@@ -188,7 +188,7 @@ export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
   /**
    * Send request.
    */
-  public request<Request extends Protocol["OutgoingRequest"]>(
+  public request<Request extends P["OutgoingRequest"]>(
     method: Request["method"],
     params: Request["params"],
   ): Promise<Request["result"]> {
@@ -206,7 +206,7 @@ export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
   /**
    * Send notification.
    */
-  public notify<Notification extends Protocol["OutgoingNotification"]>(
+  public notify<Notification extends P["OutgoingNotification"]>(
     method: Notification["method"],
     params: Notification["params"],
   ): void {
@@ -219,7 +219,7 @@ export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
   /**
    * Receive request.
    */
-  public onRequest<Request extends Protocol["IncomingRequest"]>(
+  public onRequest<Request extends P["IncomingRequest"]>(
     method: Request["method"],
     callback: Callback<Request["params"], Request["result"]>,
   ) {
@@ -233,7 +233,7 @@ export class RPC<Protocol extends ProtocolDefinition = ProtocolDefinition> {
   /**
    * Receive notification.
    */
-  public onNotification<Notification extends Protocol["IncomingNotification"]>(
+  public onNotification<Notification extends P["IncomingNotification"]>(
     method: Notification["method"],
     callback: Callback<Notification["params"], never>,
   ) {
