@@ -195,7 +195,7 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Send request.
    */
-  public request<M extends string>(
+  public request<M extends P['OutgoingRequest']['method']>(
     method: M,
     params: ByMethod<P["OutgoingRequest"], M>["params"],
   ): Promise<ByMethod<P["OutgoingRequest"], M>["result"]> {
@@ -213,7 +213,7 @@ export class RPC<P extends Protocol = Protocol> {
   /**
    * Send notification.
    */
-  public notify<M extends string>(
+  public notify<M extends P['OutgoingNotification']['method']>(
     method: M,
     params: ByMethod<P["OutgoingNotification"], M>["params"],
   ): void {
