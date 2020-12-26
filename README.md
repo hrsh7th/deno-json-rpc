@@ -1,11 +1,11 @@
-# deno-json-rpc
+# typed-json-rpc
 
 Strongly typed JSON-RPC module.
 
 # Usage
 
 ```typescript
-import { RPC, VSCodeIO } from '.../mod.ts'
+import { RPC, VSCodeIO } from 'https://deno.land/x/typed_json_rpc/mod.ts'
 
 type TextDocumentDefinitionRequest = {
   method: 'textDocument/definition';

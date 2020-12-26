@@ -279,12 +279,27 @@ export class RPC<P extends Protocol = Protocol> {
             result: result,
           }));
         } catch (e) {
+          if (e instanceof Error) {
+            return this.io.write(JSON.stringify({
+              id: message.id,
+              error: {
+                code: -32603,
+                message: "Internal error",
+                data: {
+                  message: e.message,
+                  stack: (e.stack || '').split("\n")
+                }
+              }
+            }));
+          }
+
+          // chain
           return this.io.write(JSON.stringify({
             id: message.id,
             error: {
-              code: -32603,
-              message: "Internal error",
-              data: e,
+              code: e.code || -32603,
+              message: e.message || "Internal error",
+              data: e.data || undefined
             },
           }));
         }

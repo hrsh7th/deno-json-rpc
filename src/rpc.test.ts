@@ -43,7 +43,7 @@ Deno.test(
   "request failure",
   prepare(async ({ client, server }) => {
     server.onRequest("test", (params) => {
-      throw params;
+      throw new Error(params);
     });
     try {
       await client.request("test", 1);
@@ -51,7 +51,34 @@ Deno.test(
       assertEquals(e, {
         code: -32603,
         message: "Internal error",
-        data: 1,
+        data: {
+          message: "1",
+          stack: e.data.stack
+        }
+      });
+    }
+  }),
+);
+
+Deno.test(
+  "request failure chain",
+  prepare(async ({ client, server }) => {
+    server.onRequest("test", async (params) => {
+      return await server.request("test", params);
+    });
+    client.onRequest("test", (params) => {
+      throw new Error(params);
+    });
+    try {
+      await client.request("test", 1);
+    } catch (e) {
+      assertEquals(e, {
+        code: -32603,
+        message: "Internal error",
+        data: {
+          message: "1",
+          stack: e.data.stack
+        }
       });
     }
   }),
